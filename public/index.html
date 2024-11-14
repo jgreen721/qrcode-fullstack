@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="socket.io/socket.io.js"></script>
+    <title>QR-Code Challenge</title>
+  </head>
+  <body>
+    <div class="app">
+      <canvas></canvas>
+      <div class="app-content">
+        <header class="header">
+          <h1 class="header-h1">QR Code Design</h1>
+          <small class="header-caption"
+            >Streamed from
+            <span class="code-span"><code>.json</code></span> file to being
+            displayed on the client</small
+          >
+        </header>
+        <div class="qr-code-parent">
+          <div class="qr-code-content">
+            <div class="qr-img-container">
+              <div class="loading-progress-bar">
+                <div id="progress" class="loading-progress"></div>
+              </div>
+              <!-- <img class="qr-img" src="./copy.png" alt="" /> -->
+            </div>
+            <div class="qr-text-content">
+              <h3 id="title" class="title-h3">
+                <!-- Improve your front-end skills by building projects -->
+              </h3>
+              <h5 id="blurb" class="blurb-h5"></h5>
+            </div>
+          </div>
+        </div>
+
+        <footer class="footer">
+          <strong>
+            <a target="_blank" class="footer-link" href="https://jgreen721dev"
+              >JGDev</a
+            >
+          </strong>
+        </footer>
+      </div>
+    </div>
+    <script src="particles.js"></script>
+    <script>
+      var socket = io();
+      let FILE_SIZE = 0;
+      let progressEl = document.querySelector("#progress");
+
+      socket.emit("get-data");
+      socket.emit("get-title");
+      let imgChunks = [];
+      let CHUNK_COUNT = 0;
+
+      socket.on("title", (titleCharacter) => {
+        console.log(titleCharacter);
+        if (titleCharacter == '"') return;
+        let spanLetter = document.createElement("span");
+        spanLetter.className = `title-letter`;
+
+        if (titleCharacter.character != " ") {
+          spanLetter.classList.add(titleCharacter.animation);
+        }
+        spanLetter.innerHTML = titleCharacter.character;
+        document.querySelector("#title").appendChild(spanLetter);
+      });
+
+      socket.on("blurb", (titleCharacter) => {
+        console.log(titleCharacter);
+        if (titleCharacter == '"') return;
+        let spanLetter = document.createElement("span");
+        spanLetter.className = `blurb-letter`;
+
+        if (titleCharacter.character != " ") {
+          spanLetter.classList.add(titleCharacter.animation);
+        }
+        spanLetter.innerHTML = titleCharacter.character;
+        document.querySelector("#blurb").appendChild(spanLetter);
+      });
+
+      socket.on("img-chunks", (chunks) => {
+        chunks = new Int8Array(chunks);
+        CHUNK_COUNT += chunks.length;
+        let percent = Math.ceil((CHUNK_COUNT / FILE_SIZE) * 100);
+        handleProgress(percent);
+
+        imgChunks.push(chunks);
+        let flattenedArray = new Int8Array(FILE_SIZE);
+        let offset = 0;
+        imgChunks.forEach((chunk) => {
+          flattenedArray.set(chunk, offset);
+          offset += chunk.length;
+        });
+        if (offset == FILE_SIZE) {
+          handleCreateImage(flattenedArray);
+        }
+      });
+
+      socket.on("file-size", (fileSize) => {
+        console.log("fileSize:", fileSize);
+        FILE_SIZE = fileSize;
+      });
+
+      function handleProgress(percent) {
+        console.log(`Percent: ${percent}%`);
+        progressEl.style.width = `${percent}%`;
+        document.querySelector(
+          ".loading-progress-bar"
+        ).style.boxShadow = `10px 10px 14px rgba(150,140,210,${
+          percent / 100
+        }),3px 3px 4px rgba(130,200,110,${percent / 100})`;
+        if (percent == 100) {
+          setTimeout(() => {
+            document
+              .querySelector(".loading-progress-bar")
+              .classList.add("exit-animation");
+          }, 500);
+        }
+      }
+
+      function handleCreateImage(int8Data) {
+        console.log("FLattendARray", int8Data);
+        const blob = new Blob([int8Data], { type: "image/png" });
+        const url = URL.createObjectURL(blob);
+
+        const img = new Image();
+        img.src = url;
+        img.className = "qr-img";
+        setTimeout(() => {
+          document.querySelector(".qr-img-container").appendChild(img);
+        }, 1000);
+      }
+    </script>
+  </body>
+</html>
