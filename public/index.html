@@ -132,6 +132,9 @@
         img.src = url;
         img.className = "qr-img";
         setTimeout(() => {
+          document
+            .querySelector(".qr-img-container")
+            .removeChild(document.querySelector(".loading-progress-bar"));
           document.querySelector(".qr-img-container").appendChild(img);
         }, 1000);
       }

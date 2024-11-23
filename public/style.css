@@ -189,7 +189,7 @@ code{
   position:absolute;
   inset:0;
   height:100%;
-  width:30%;
+  width:0%;
   transition:.5s ease;
   background:linear-gradient(to right,var(--slate),var(--darkSlate),var(--white));
   background:mediumspringgreen;
